@@ -6,7 +6,7 @@ Juego de pelea 1 vs 1 con tunos. Un solo archivo (`index.html`), sin instalar na
 1. Crea un repositorio nuevo en GitHub (por ejemplo `tuno-fighter`).
 2. Sube `index.html` (y `luchadores.json` si ya lo tienes). **Add file → Upload files**.
 3. Ve a **Settings → Pages**. En *Source* elige **Deploy from a branch**, rama `main`, carpeta `/ (root)`, y guarda.
-4. En 1-2 minutos tu juego estará en `https://TU-USUARIO.github.io/tuno-fighter/`.
+4. En 1-2 minutos tu juego estará en `https://DretcmU.github.io/tuno-fighter/`.
 
 ## Poner las caras de tus amigos (una sola vez)
 1. Abre `index.html` en tu computadora (doble clic).
