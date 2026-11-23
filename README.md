@@ -1,6 +1,6 @@
 # Tuno Fighter 🥊
 
-Juego de pelea 1 vs 1 con tunos. Un solo archivo (`index.html`), sin instalar nada.
+Juego de pelea 1 vs 1 con tunos.
 
 ## Subirlo a GitHub Pages
 1. Crea un repositorio nuevo en GitHub (por ejemplo `tuno-fighter`).
@@ -14,7 +14,6 @@ Juego de pelea 1 vs 1 con tunos. Un solo archivo (`index.html`), sin instalar na
 3. Pulsa **💾 Guardar luchadores**: se descarga `luchadores.json`.
 4. Sube `luchadores.json` al repositorio, junto a `index.html`. Al abrir la página se cargarán solos.
 
-> Ojo: si el repositorio es público, las caras de `luchadores.json` también serán públicas.
 
 ## Controles
 **J1:** A/D mover · W saltar (2 veces = doble salto) · S agacharse/guardia · F puño · G patada · E dash · H pandereta · R lluvia (40%) · J serenata (100%)
