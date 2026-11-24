@@ -110,9 +110,9 @@ function sfx(k){if(net&&net.role=='host')EV.push(k);switch(k){
  case 'bell':tn(1046,1046,.5,'triangle',.25);tn(1568,1568,.5,'triangle',.18,now()+.12);break}}
 const LEAD=[440,0,440,466,554,0,466,440,329,0,349,329,293,0,329,0,440,0,440,466,554,0,587,659,587,0,554,466,440,0,0,0],BASS=[110,0,110,0,110,0,116.5,0,82.4,0,82.4,0,110,0,98,0];
 function sched(){const a=ac();if(!a||muted)return;if(nextT<a.currentTime)nextT=a.currentTime+.05;while(nextT<a.currentTime+.2){const s=step%32,q=60/150/4,t=nextT;if(LEAD[s])tn(LEAD[s],LEAD[s],q*1.6,'square',.05,t);const b=BASS[s%16];if(b)tn(b,b,q*1.8,'triangle',.12,t);if(s%8==0)tn(150,40,.12,'sine',.3,t);if(s%8==4)ns(.1,.25,1800,t);if(s%2==0)ns(.03,.08,7000,t);nextT+=q;step++}}
-function startMusic(){const a=ac();if(!a||musicTimer)return;nextT=a.currentTime+.1;step=0;musicTimer=setInterval(sched,40)}
-function stopMusic(){clearInterval(musicTimer);musicTimer=null}
-function toggleMute(){muted=!muted;$('snd').textContent=muted?'🔇 Sonido: no (M)':'🔊 Sonido: sí (M)'}
+function startSynth(){const a=ac();if(!a||musicTimer)return;nextT=a.currentTime+.1;step=0;musicTimer=setInterval(sched,40)}
+function stopSynth(){clearInterval(musicTimer);musicTimer=null}
+function toggleMute(){muted=!muted;if(au)au.muted=muted;$('snd').textContent=muted?'🔇 Sonido: no (M)':'🔊 Sonido: sí (M)'}
 $('snd').onclick=toggleMute;
 function exportF(){const a=F.filter(f=>!f.ph).map(f=>({name:f.name,data:f.face.toDataURL('image/png')}));if(!a.length){alert('Primero carga algunas fotos');return}const u=document.createElement('a');u.href=URL.createObjectURL(new Blob([JSON.stringify(a)],{type:'application/json'}));u.download='luchadores.json';document.body.append(u);u.click();u.remove()}
 $('save').onclick=exportF;
@@ -157,7 +157,7 @@ try{const mm=location.hash.match(/sala=([A-Za-z0-9]{5})/);if(mm){$('online').sty
 const PEER_OPTS={}; // servidor propio: {host:'mi-servidor.onrender.com',port:443,path:'/',secure:true}
 function mkPeer(id){const p=new Peer(id,PEER_OPTS);p.on('disconnected',()=>{try{p.reconnect()}catch(e){}});return p}
 function netCheck(){if(!net)return;const d=performance.now()-(net.rx||0);net.wait=!!net.away||d>2500;if(net.wait&&net.role=='host')net.rin={};if(d>15000){alert('Se perdió la conexión con tu rival');netOff()}}
-function drw(){drw0();if(net&&net.wait&&cv.style.display=='block'){X.fillStyle='#000b';X.fillRect(0,0,800,450);X.fillStyle='#fff';X.textAlign='center';X.font='bold 26px monospace';X.fillText(net.away?'Tu rival cambió de pantalla…':'Sin señal del rival…',400,215);X.font='16px monospace';X.fillText('Esperando a que vuelva (se cancela a los 15 s)',400,250)}}
+function drw(){drw0();if(playing&&curS&&performance.now()-songAt<6000&&cv.style.display=='block'){X.font='12px monospace';X.fillStyle='#fffd';X.textAlign='center';X.fillText('♪ '+curS.replace(/^canciones\//,'').replace(/\.mp3$/,''),400,442)}if(net&&net.wait&&cv.style.display=='block'){X.fillStyle='#000b';X.fillRect(0,0,800,450);X.fillStyle='#fff';X.textAlign='center';X.font='bold 26px monospace';X.fillText(net.away?'Tu rival cambió de pantalla…':'Sin señal del rival…',400,215);X.font='16px monospace';X.fillText('Esperando a que vuelva (se cancela a los 15 s)',400,250)}}
 setInterval(()=>{if(net&&net.conn&&net.conn.open)try{net.conn.send({t:'p'})}catch(e){}},1000);
 try{document.addEventListener('visibilitychange',()=>{const ok=net&&net.conn&&net.conn.open;if(document.hidden){Object.keys(keys).forEach(k=>keys[k]=0);if(ok)net.conn.send({t:'away'})}else{if(net)net.rx=performance.now();if(ok)net.conn.send({t:'back'})}});window.addEventListener('pagehide',()=>{if(net&&net.conn&&net.conn.open)net.conn.send({t:'bye'})})}catch(e){}
 // ---- JOYSTICK ----
@@ -167,12 +167,24 @@ function sr(){kn.style.transform='';const c=CT[0];keys[c.l]=keys[c.r]=keys[c.u]=
 st.addEventListener('pointerdown',e=>{e.preventDefault();try{st.setPointerCapture(e.pointerId)}catch(x){}sv(e)});
 st.addEventListener('pointermove',e=>{if(st.hasPointerCapture&&st.hasPointerCapture(e.pointerId))sv(e)});
 ['pointerup','pointercancel'].forEach(v=>st.addEventListener(v,sr));
+const RAW='https://raw.githubusercontent.com/DretcmU/Reel-tuna-antes-despues/main/',CDN='https://cdn.jsdelivr.net/gh/DretcmU/Reel-tuna-antes-despues@main/';
+let SONGS=["canciones/Alma llanera - Tuna de Derecho de Alicante.mp3", "canciones/Cómo fue - Tuna Bardos UPR.mp3", "canciones/Disculpe Usted - Tuna de Ciencias de Valencia.mp3", "canciones/Don Quijote.mp3", "canciones/Elsa - Tuna Universidad del Azuay.mp3", "canciones/Estando en Otras Tierras.mp3", "canciones/ISA PARRANDERA - Tuna de Distrito Universidad de La Serena - Sesión Binaural en Vivo.mp3", "canciones/Imagenes De Ayer.mp3", "canciones/Isa del candidito - 45 años del buen tunar.mp3", "canciones/La Compostelana.mp3", "canciones/La Jota del Estudiante.mp3", "canciones/Lagrimas Negras [Facebook Live] 2017.mp3", "canciones/Las Palmeras - Tuna Universitaria de Deusto.mp3", "canciones/Lloraran las Estrellas - Tuna de Derecho de Alicante.mp3", "canciones/Locura Mía.mp3", "canciones/ME ESTOY ENAMORANDO - Tuna de Distrito Universidad de La Serena - Sesión Binaural en Vivo.mp3", "canciones/Nube Gris (En Vivo).mp3", "canciones/Pescador de morenas - Tuna de Arquitectura Técnica de Valencia [W7R1Xtf72fY].mp3", "canciones/Segreles - Novillero (Segreles en vivo - Decada).mp3", "canciones/Tuna Universitária de Madrid - Tuna de Botin - Isa de los Cantos Canarios.mp3", "canciones/Yo quiero ser rondador - Tuna de Derecho de Alicante.mp3", "canciones/cancion del pardillo.mp3"],au=null,order=[],curS='',songAt=0,fails=0,useCdn=false,playing=false;
+try{fetch(RAW+'songs.json').then(r=>r.json()).then(a=>{if(a&&a.length)SONGS=a.map(o=>o.file)}).catch(()=>{})}catch(e){}
+function songUrl(f){return (useCdn?CDN:RAW)+f.split('/').map(encodeURIComponent).join('/')}
+function playCur(){au.src=songUrl(curS);au.muted=muted;songAt=performance.now();const pr=au.play();if(pr)pr.catch(()=>{})}
+function nextSong(){if(!playing)return;if(!order.length)order=SONGS.map((_,i)=>i).sort(()=>Math.random()-.5);curS=SONGS[order.pop()];useCdn=false;playCur()}
+function initAu(){if(au)return;au=new Audio();au.volume=.45;au.preload='auto';au.onended=nextSong;au.onerror=()=>{if(!playing)return;if(!useCdn){useCdn=true;playCur()}else if(++fails<4)nextSong();else{playing=false;startSynth()}}}
+function unlockAu(){initAu();au.muted=true;au.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';const p=au.play();if(p)p.then(()=>au.pause()).catch(()=>{});au.muted=muted}
+addEventListener('pointerdown',unlockAu,{once:true});
+function startMusic(){initAu();playing=true;fails=0;nextSong()}
+function stopMusic(){playing=false;if(au)au.pause();stopSynth()}
+try{document.addEventListener('visibilitychange',()=>{if(!au)return;if(document.hidden)au.pause();else if(playing&&!muted){const p=au.play();if(p)p.catch(()=>{})}})}catch(e){}
 const AT={1:{dur:18,a0:5,a1:11,rg:75,dm:6},2:{dur:26,a0:9,a1:17,rg:95,dm:10},3:{dur:24},4:{dur:44,a0:14,a1:24,rg:140,dm:24},5:{dur:26,a0:8,a1:14,rg:100,dm:8,low:1},6:{dur:20,a0:3,a1:14,rg:85,dm:9},7:{dur:16,a0:2,a1:12,rg:62,dm:7},8:{dur:22,a0:4,a1:10,rg:70,dm:9,air:1},9:{dur:30}};
 function hurtP(o,p,dm,low,unb){if(o.bd>0)return;const g=o.guard&&!unb&&!(low&&!o.cr);if(g){dm=Math.ceil(dm*.2);o.hurt=8;o.say=30;o.saytxt='¡BLOQUEO!';sfx('block')}else{o.hurt=16;o.atk=0;sfx(dm>=20?'big':dm>=9?'kick':'punch')}o.hp=Math.max(0,o.hp-dm);p.meter=Math.min(100,p.meter+dm*1.5);o.meter=Math.min(100,o.meter+dm);if(o.hp<=0)endRound(p.i)}
 function upd(){
  if(state=='fight'){
   last++;if(last%60==0){time--;if(time<=0)endRound(P[0].hp==P[1].hp?-1:(P[0].hp>P[1].hp?0:1))}
-  P.forEach((p,i)=>{const o=P[1-i];if(!p.atk&&!p.hurt&&p.y==0)p.dir=o.x>p.x?1:-1;
+  P.forEach((p,i)=>{const o=P[1-i];if(!p.atk&&!p.hurt&&Math.abs(o.x-p.x)>12)p.dir=o.x>p.x?1:-1;
    let l=0,r=0,u=0,d=0,pu=0,ki=0,sp=0,sx=0,dh=0,ls=0;
    if(i==1&&!twoP&&!net){const dd=Math.abs(o.x-p.x);
     if(dd>110)(o.x>p.x?r=1:l=1);else if(dd<55)(o.x>p.x?l=1:r=1);
@@ -183,6 +195,7 @@ function upd(){
     if(p.meter>=40&&dd>180&&Math.random()<.01)ls=1;
     if(o.atk&&dd<130&&Math.random()<.1)p.aiG=25;
     if(p.aiG>0){p.aiG--;o.x>p.x?l=1:r=1}
+    if(p.aiT>0){p.aiT--;l=r=0;p.aiX>0?r=1:l=1}else if(dd<120&&p.y==0&&Math.random()<.006){u=1;p.aiX=o.x>p.x?1:-1;p.aiT=36}
     if(Math.random()<.007)u=1;
     if(G&&Math.abs(G.x-p.x)<130&&Math.random()<.9)u=1}
    else{const g=k=>inp(i,k);l=g('l');r=g('r');u=g('u');d=g('d');pu=g('p');ki=g('k');sp=g('s');sx=g('x');dh=g('h');ls=g('m')}
@@ -195,7 +208,7 @@ function upd(){
    if(p.bd>0){p.bd--;p.x-=p.dir*12}
    if(p.dc>0)p.dc--;
    if(!p.atk&&!p.hurt&&!p.bd){
-    if(!p.cr){p.w=(l||r)?p.w+.3:0;p.x+=((r?1:0)-(l?1:0))*(away?3:4.5)}
+    if(!p.cr){p.w=(l||r)?p.w+.3:0;p.x+=((r?1:0)-(l?1:0))*(p.y<0?5.5:(away?3:4.5))}
     if(jp&&!p.cr){if(p.y==0){p.vy=-15;p.dj=0;sfx('jump')}else if(!p.dj){p.vy=-13;p.dj=1;sfx('jump')}}
     if(sx&&p.meter>=100){p.meter=0;atk(p,4);sfx('guit');p.say=70;p.saytxt='¡SERENATA!'}
     else if(ls&&p.meter>=40){p.meter-=40;atk(p,9);sfx('pan');p.say=60;p.saytxt='¡LLUVIA!'}
@@ -218,7 +231,7 @@ function upd(){
   if(msgT<=0&&state=='fight'){gnext--;if(gnext==90){gs=Math.random()<.5?1:-1;sfx('alert')}
    if(gnext<=0&&!G){G={x:gs>0?-50:850,vx:gs*6.5,hit:[0,0]};sfx('giggle');gnext=(9+Math.random()*8)*60|0}
    if(G){G.x+=G.vx;P.forEach((p,i)=>{if(!G.hit[i]&&p.hp>0&&Math.abs(G.x-p.x)<28&&p.y>-55){G.hit[i]=1;p.hp=Math.max(0,p.hp-10);p.stun=150;p.atk=0;p.hurt=0;p.say=90;p.saytxt='¡PARALIZADO!';sfx('stun');if(p.hp<=0)endRound(1-i)}});if(G&&(G.x<-90||G.x>890))G=null}}
-  if(Math.abs(P[0].x-P[1].x)<40){const m=(P[0].x+P[1].x)/2,s=P[0].x<P[1].x?1:-1;P[0].x=m-20*s;P[1].x=m+20*s}
+  if(P[0].y>-40&&P[1].y>-40){const dx=P[1].x-P[0].x,sg=dx>=0?1:-1,ov=40-Math.abs(dx);if(ov>0){const q=Math.min(ov/2,8);P[0].x=Math.max(40,Math.min(760,P[0].x-sg*q));P[1].x=Math.max(40,Math.min(760,P[1].x+sg*q))}}
  }
  if(msgT>0)msgT--;
  if(state=='over'&&(keys.Enter||(net&&net.rin.e))){keys.Enter=0;if(net)net.rin.e=0;if(wins[0]>=2||wins[1]>=2){if(net&&net.conn&&net.conn.open)net.conn.send({t:'end'});toMenu()}else{round++;newRound()}}
